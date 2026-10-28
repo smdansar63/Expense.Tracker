@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block title %}Monthly Budgets - Personal Expense Tracker{% endblock %}
+
+{% block breadcrumb %}
+<div class="flex items-center gap-2 text-xs text-slate-400">
+    <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400">Dashboard</a>
+    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    <span class="text-slate-800 dark:text-slate-200 font-semibold">Monthly Budgets</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#151d30] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('dashboard') }}" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" title="Back to Dashboard">
+                <i class="fa-solid fa-arrow-left text-sm"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-extrabold font-heading text-slate-900 dark:text-white">Budget Management</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Control planned outflows, enforce limits, and monitor utilization rates</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary !py-2 text-xs font-semibold">
+                <i class="fa-solid fa-house text-slate-400 text-xs"></i>
+                <span>Back to Dashboard</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Month & Year Selector + Budget Form Card -->
+    <div class="fintech-card p-6 rounded-2xl">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            
+            <!-- Target Period Selector -->
+            <div>
+                <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">Select Target Billing Cycle</label>
+                <form action="{{ url_for('budgets') }}" method="GET" class="flex flex-wrap items-center gap-3">
+                    <select name="month" class="input-fintech !w-auto text-xs sm:text-sm font-semibold" onchange="this.form.submit()">
+                        {% for m_num in range(1, 13) %}
+                        <option value="{{ m_num }}" {% if data.selected_month == m_num %}selected{% endif %}>
+                            {{ ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"][m_num-1] }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <select name="year" class="input-fintech !w-auto text-xs sm:text-sm font-semibold" onchange="this.form.submit()">
+                        {% for y_num in range(current_year - 2, current_year + 3) %}
+                        <option value="{{ y_num }}" {% if data.selected_year == y_num %}selected{% endif %}>
+                            {{ y_num }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </form>
+            </div>
+
+            <!-- Set / Update Budget Form -->
+            <div class="lg:border-l lg:border-slate-100 dark:lg:border-slate-800 lg:pl-6 flex-1 max-w-md">
+                <form action="{{ url_for('budgets') }}" method="POST" class="space-y-3">
+                    <input type="hidden" name="action" value="set_budget">
+                    <input type="hidden" name="month" value="{{ data.selected_month }}">
+                    <input type="hidden" name="year" value="{{ data.selected_year }}">
+                    
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">
+                        Set Allocation for {{ data.month_name }} {{ data.selected_year }}
+                    </label>
+
+                    <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-bold text-slate-400 text-sm">₹</span>
+                            <input type="number" step="100" min="1" name="budget_amount" value="{{ data.budget_amount if data.budget_amount > 0 else '' }}" required placeholder="e.g. 50000" class="input-fintech !pl-8 text-sm font-semibold">
+                        </div>
+                        <button type="submit" class="btn-primary !py-2.5 !px-4 text-xs font-semibold whitespace-nowrap shadow-md">
+                            <i class="fa-solid fa-floppy-disk text-xs"></i>
+                            <span>Save Budget</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Active Budget Status Card with Dynamic Progress Bar & Alert Warnings -->
+    <div class="fintech-card p-6 sm:p-8 rounded-2xl relative overflow-hidden">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div>
+                <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">Monthly Spending Status</span>
+                <h2 class="text-2xl font-bold font-heading text-slate-900 dark:text-white mt-1">
+                    {{ data.month_name }} {{ data.selected_year }}
+                </h2>
+            </div>
+
+            <!-- Status Alert Badge -->
+            <div>
+                {% if data.status == 'exceeded' %}
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-bold animate-bounce">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>{{ data.status_label }}</span>
+                </div>
+                {% elif data.status == 'warning' %}
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-bold">
+                    <i class="fa-solid fa-circle-exclamation"></i>
+                    <span>{{ data.status_label }}</span>
+                </div>
+                {% elif data.status == 'normal' %}
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-bold">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>{{ data.status_label }}</span>
+                </div>
+                {% else %}
+                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-xs font-medium">
+                    <i class="fa-solid fa-circle-info"></i>
+                    <span>No Budget Configured</span>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 my-6">
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                <span class="text-xs text-slate-400 font-medium">Allocated Budget</span>
+                <div class="text-2xl font-bold font-heading text-slate-800 dark:text-white mt-1">
+                    {{ data.formatted_budget }}
+                </div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                <span class="text-xs text-slate-400 font-medium">Actual Outflow (Spent)</span>
+                <div class="text-2xl font-bold font-heading text-indigo-600 dark:text-indigo-400 mt-1">
+                    {{ data.formatted_spent }}
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">{{ data.tx_count }} transactions</div>
+            </div>
+
+            <div class="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+                <span class="text-xs text-slate-400 font-medium">Remaining Headroom</span>
+                <div class="text-2xl font-bold font-heading {% if data.remaining < 0 %}text-rose-600 dark:text-rose-400{% else %}text-emerald-600 dark:text-emerald-400{% endif %} mt-1">
+                    {{ data.formatted_remaining }}
+                </div>
+                <div class="text-[11px] text-slate-400 mt-0.5">
+                    {% if data.remaining >= 0 %}Available funds{% else %}Excess over budget{% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        {% if data.budget_amount > 0 %}
+        <div class="space-y-2 mt-4">
+            <div class="flex items-center justify-between text-xs font-semibold">
+                <span class="text-slate-500 dark:text-slate-400">Budget Consumption</span>
+                <span class="{% if data.usage_pct > 100 %}text-rose-600 dark:text-rose-400 font-bold{% elif data.usage_pct >= 80 %}text-amber-500 font-bold{% else %}text-emerald-600 dark:text-emerald-400{% endif %}">
+                    {{ data.usage_pct }}% Utilized
+                </span>
+            </div>
+            
+            <div class="w-full h-3.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden p-0.5">
+                <div class="h-full rounded-full transition-all duration-500 {% if data.usage_pct > 100 %}bg-rose-500{% elif data.usage_pct >= 80 %}bg-amber-500{% else %}bg-emerald-500{% endif %}" style="width: {{ [data.usage_pct, 100]|min }}%"></div>
+            </div>
+
+            <!-- Dynamic Alert Notices -->
+            {% if data.status == 'exceeded' %}
+            <div class="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs flex items-center gap-2 mt-3">
+                <i class="fa-solid fa-triangle-exclamation text-rose-500 text-sm"></i>
+                <span><strong>Budget Exceeded Alert:</strong> You have spent {{ data.formatted_spent }}, surpassing your planned budget by {{ (data.total_spent - data.budget_amount)|inr }}.</span>
+            </div>
+            {% elif data.status == 'warning' %}
+            <div class="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 mt-3">
+                <i class="fa-solid fa-circle-exclamation text-amber-500 text-sm"></i>
+                <span><strong>Approaching Limit Warning:</strong> You have consumed over 80% of your allocated budget for this month. Moderate non-essential spending.</span>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Historical Budget vs Actual Spent Comparison Chart -->
+    <div class="fintech-card p-6 rounded-2xl flex flex-col">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-indigo-500"></i>
+                    <span>Budget vs Actual Spending Comparison</span>
+                </h3>
+                <p class="text-xs text-slate-400">Past 6 months planned budget versus actual recorded expenditures</p>
+            </div>
+        </div>
+        <div class="relative min-h-[300px]">
+            <canvas id="budgetHistChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Saved Budgets Ledger Table -->
+    <div class="fintech-card rounded-2xl overflow-hidden">
+        <div class="p-5 border-b border-slate-100 dark:border-slate-800">
+            <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-indigo-500"></i>
+                <span>Configured Budget History</span>
+            </h3>
+            <p class="text-xs text-slate-400 mt-0.5">All previously saved monthly budget records</p>
+        </div>
+
+        {% if data.budget_history %}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50/75 dark:bg-slate-800/40 text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-100 dark:border-slate-800">
+                    <tr>
+                        <th class="py-3 px-5">Billing Period</th>
+                        <th class="py-3 px-5 text-right">Allocated Budget</th>
+                        <th class="py-3 px-5 text-right">Total Outflow</th>
+                        <th class="py-3 px-5 text-right">Variance / Headroom</th>
+                        <th class="py-3 px-5 text-center">Utilization</th>
+                        <th class="py-3 px-5 text-center">Action</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for b in data.budget_history %}
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors">
+                        <td class="py-3.5 px-5 font-semibold text-slate-800 dark:text-slate-200">
+                            {{ b.month_name }} {{ b.year }}
+                        </td>
+                        <td class="py-3.5 px-5 text-right font-heading font-bold text-slate-800 dark:text-slate-100">
+                            {{ b.formatted_budget }}
+                        </td>
+                        <td class="py-3.5 px-5 text-right font-heading font-bold text-indigo-600 dark:text-indigo-400">
+                            {{ b.formatted_spent }}
+                        </td>
+                        <td class="py-3.5 px-5 text-right font-heading font-semibold {% if b.is_exceeded %}text-rose-500{% else %}text-emerald-500{% endif %}">
+                            {{ b.formatted_remaining }}
+                        </td>
+                        <td class="py-3.5 px-5 text-center">
+                            <span class="inline-flex px-2.5 py-1 rounded-full text-xs font-bold {% if b.is_exceeded %}bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300{% elif b.usage_pct >= 80 %}bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300{% else %}bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300{% endif %}">
+                                {{ b.usage_pct }}%
+                            </span>
+                        </td>
+                        <td class="py-3.5 px-5 text-center">
+                            <form action="{{ url_for('budgets') }}" method="POST" onsubmit="return confirm('Delete budget for {{ b.month_name }} {{ b.year }}?');">
+                                <input type="hidden" name="action" value="delete_budget">
+                                <input type="hidden" name="budget_id" value="{{ b.id }}">
+                                <button type="submit" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors" title="Delete">
+                                    <i class="fa-regular fa-trash-can text-xs"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="p-10 text-center text-slate-400 text-xs">
+            <i class="fa-solid fa-piggy-bank text-3xl mb-2 opacity-30"></i>
+            <p>No monthly budgets configured yet. Use the form above to plan your monthly targets.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const histData = {{ data.hist_chart | tojson }};
+        initBudgetChart(histData);
+    });
+</script>
+{% endblock %}

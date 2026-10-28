@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Log In - Personal Expense Tracker{% endblock %}
+
+{% block auth_content %}
+<div class="w-full max-w-md mx-auto px-4 py-8">
+    <div class="fintech-card p-6 sm:p-8 rounded-2xl shadow-xl relative">
+        <!-- Working Back Button -->
+        <a href="{{ url_for('index') }}" data-action="go-back" data-fallback="{{ url_for('index') }}" class="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 mb-6 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Home</span>
+        </a>
+
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <div class="w-12 h-12 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-xl mx-auto mb-3">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i>
+            </div>
+            <h2 class="text-2xl font-bold font-heading text-slate-900 dark:text-white">Welcome Back</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Log in to access your personal expense dashboard</p>
+        </div>
+
+        <!-- Login Form -->
+        <form action="{{ url_for('login') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}" method="POST" class="space-y-4">
+            <div>
+                <label for="email" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Email Address</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-regular fa-envelope text-sm"></i>
+                    </span>
+                    <input type="email" id="email" name="email" value="{{ email or '' }}" required placeholder="name@example.com" class="input-fintech !pl-9 text-sm">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="password" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400">Password</label>
+                    <a href="{{ url_for('forgot_password') }}" class="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:underline">Forgot Password?</a>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-lock text-sm"></i>
+                    </span>
+                    <input type="password" id="password" name="password" required placeholder="Enter your password" class="input-fintech !pl-9 !pr-10 text-sm">
+                    <button type="button" data-action="toggle-password" data-target="password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <i class="fa-regular fa-eye text-sm"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Remember Me -->
+            <div class="flex items-center justify-between pt-1">
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="remember" class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 w-4 h-4">
+                    <span class="text-xs text-slate-600 dark:text-slate-400">Remember me for 7 days</span>
+                </label>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-2">
+                <button type="submit" class="w-full btn-primary !py-3 text-sm !rounded-xl shadow-lg shadow-indigo-500/25">
+                    <span>Log In</span>
+                    <i class="fa-solid fa-arrow-right text-xs"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- Footer Link -->
+        <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 text-center">
+            <p class="text-xs text-slate-500 dark:text-slate-400">
+                Don't have an account yet? 
+                <a href="{{ url_for('signup') }}" class="font-semibold text-indigo-600 dark:text-indigo-400 hover:underline ml-1">Create one now</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

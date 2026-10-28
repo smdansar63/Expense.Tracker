@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Account Settings & Profile - Personal Expense Tracker{% endblock %}
+
+{% block breadcrumb %}
+<div class="flex items-center gap-2 text-xs text-slate-400">
+    <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400">Dashboard</a>
+    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    <span class="text-slate-800 dark:text-slate-200 font-semibold">Profile & Settings</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex items-center justify-between">
+        <a href="{{ url_for('dashboard') }}" data-action="go-back" data-fallback="{{ url_for('dashboard') }}" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Dashboard</span>
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="btn-secondary !py-1.5 !px-3 text-xs font-semibold">
+            <i class="fa-solid fa-house text-slate-400 text-xs"></i>
+            <span>Dashboard</span>
+        </a>
+    </div>
+
+    <!-- User Account Summary Hero Card -->
+    <div class="fintech-card p-6 sm:p-8 rounded-2xl relative overflow-hidden bg-gradient-to-tr from-white via-indigo-50/20 to-purple-50/30 dark:from-[#151d30] dark:via-slate-900 dark:to-indigo-950/20">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+            <div class="flex items-center gap-5">
+                <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-indigo-600 to-indigo-400 text-white font-heading font-extrabold text-2xl flex items-center justify-center shadow-lg shadow-indigo-500/25 border-2 border-white dark:border-slate-800 shrink-0">
+                    {{ user.full_name[:1] | upper }}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold font-heading text-slate-900 dark:text-white">{{ user.full_name }}</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                        <i class="fa-regular fa-envelope"></i>
+                        <span>{{ user.email }}</span>
+                    </p>
+                    <span class="inline-flex items-center gap-1.5 text-[11px] text-slate-400 mt-2 font-medium">
+                        <i class="fa-regular fa-calendar-check text-indigo-500"></i>
+                        <span>Member since {{ user.created_at }}</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Mini User Stats -->
+            <div class="flex items-center gap-6 sm:border-l sm:border-slate-200 dark:sm:border-slate-800 sm:pl-6">
+                <div>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Total Logs</span>
+                    <span class="text-xl font-bold font-heading text-slate-800 dark:text-white">{{ user.total_transactions }} tx</span>
+                </div>
+                <div>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400 block">Net Spending</span>
+                    <span class="text-xl font-bold font-heading text-indigo-600 dark:text-indigo-400">{{ user.formatted_total_spent }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Forms Grid: Edit Profile & Change Password -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        <!-- 1. Profile Preferences Form -->
+        <div class="fintech-card p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
+                    <div class="w-9 h-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-user-gear"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">Profile Details</h3>
+                        <p class="text-xs text-slate-400">Update identity and app preferences</p>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('profile') }}" method="POST" class="space-y-4">
+                    <input type="hidden" name="action" value="update_profile">
+                    
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Full Name</label>
+                        <input type="text" name="full_name" value="{{ user.full_name }}" required class="input-fintech text-sm">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Registered Email (Read-Only)</label>
+                        <input type="email" value="{{ user.email }}" disabled class="input-fintech text-sm !bg-slate-100 dark:!bg-slate-800/60 !text-slate-400 cursor-not-allowed">
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Preferred Currency</label>
+                            <select name="currency" class="input-fintech text-xs sm:text-sm">
+                                <option value="INR" {% if user.currency == 'INR' %}selected{% endif %}>INR (₹) - Indian Rupee</option>
+                                <option value="USD" {% if user.currency == 'USD' %}selected{% endif %}>USD ($) - US Dollar</option>
+                                <option value="EUR" {% if user.currency == 'EUR' %}selected{% endif %}>EUR (€) - Euro</option>
+                                <option value="GBP" {% if user.currency == 'GBP' %}selected{% endif %}>GBP (£) - British Pound</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Theme Preference</label>
+                            <select name="theme" class="input-fintech text-xs sm:text-sm">
+                                <option value="light" {% if user.theme == 'light' %}selected{% endif %}>Light Mode</option>
+                                <option value="dark" {% if user.theme == 'dark' %}selected{% endif %}>Dark Mode</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="pt-3">
+                        <button type="submit" class="btn-primary w-full !py-2.5 text-xs font-semibold shadow-md">
+                            <i class="fa-solid fa-floppy-disk text-xs"></i>
+                            <span>Save Profile Changes</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 2. Security & Password Change -->
+        <div class="fintech-card p-6 rounded-2xl shadow-sm flex flex-col justify-between">
+            <div>
+                <div class="flex items-center gap-3 pb-4 border-b border-slate-100 dark:border-slate-800 mb-5">
+                    <div class="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-shield-halved"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">Security & Password</h3>
+                        <p class="text-xs text-slate-400">Change your secure account password</p>
+                    </div>
+                </div>
+
+                <form action="{{ url_for('profile') }}" method="POST" class="space-y-4">
+                    <input type="hidden" name="action" value="change_password">
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Current Password</label>
+                        <div class="relative">
+                            <input type="password" id="current_password" name="current_password" required placeholder="Enter current password" class="input-fintech !pr-10 text-sm">
+                            <button type="button" data-action="toggle-password" data-target="current_password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">New Password</label>
+                        <div class="relative">
+                            <input type="password" id="new_password" name="new_password" required minlength="6" placeholder="At least 6 characters" class="input-fintech !pr-10 text-sm">
+                            <button type="button" data-action="toggle-password" data-target="new_password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-1.5">Confirm New Password</label>
+                        <div class="relative">
+                            <input type="password" id="confirm_new_password" name="confirm_password" required minlength="6" placeholder="Repeat new password" class="input-fintech !pr-10 text-sm">
+                            <button type="button" data-action="toggle-password" data-target="confirm_new_password" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                                <i class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="pt-3">
+                        <button type="submit" class="btn-primary w-full !py-2.5 text-xs font-semibold shadow-md">
+                            <i class="fa-solid fa-key text-xs"></i>
+                            <span>Update Password</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Demo Data & Session Termination Card -->
+    <div class="fintech-card p-6 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 border-dashed border-2 border-slate-200 dark:border-slate-800">
+        <div>
+            <h4 class="font-heading font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-graduation-cap text-indigo-500"></i>
+                <span>Academic Demo Financial Dataset</span>
+            </h4>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-lg">
+                For professor demonstrations or testing: Populates realistic transactions across all 7 categories and sets up historical budgets for the past 3 months with 1 click.
+            </p>
+        </div>
+
+        <form action="{{ url_for('seed_demo_data') }}" method="POST" onsubmit="return confirm('This will load 27+ realistic sample expenses and monthly budgets into your account. Continue?');">
+            <button type="submit" class="btn-secondary whitespace-nowrap !py-2.5 !px-4 text-xs font-semibold text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800/80">
+                <i class="fa-solid fa-wand-magic-sparkles text-xs"></i>
+                <span>Load Sample Demo Data</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Sign Out Button Card -->
+    <div class="flex items-center justify-between p-4 rounded-xl bg-red-50/50 dark:bg-red-950/20 border border-red-100 dark:border-red-900/30">
+        <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-red-100 dark:bg-red-900/50 text-red-600 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </div>
+            <div>
+                <span class="text-xs font-bold text-red-900 dark:text-red-300">Sign Out of System</span>
+                <p class="text-[11px] text-red-600/80 dark:text-red-400">Terminates active Flask session securely</p>
+            </div>
+        </div>
+
+        <button data-modal-target="logoutModal" class="btn-secondary !py-2 !px-4 text-xs font-semibold text-red-600 border-red-200 dark:border-red-800 hover:bg-red-100/50">
+            <span>Log Out</span>
+        </button>
+    </div>
+
+</div>
+{% endblock %}

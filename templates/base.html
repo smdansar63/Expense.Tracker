@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en" class="{{ 'dark' if session.get('theme') == 'dark' else '' }}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Personal Expense Tracker{% endblock %} - Financial Intelligence</title>
+    
+    <!-- Tailwind CSS with Custom Palette Configuration -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        fintech: {
+                            50: '#f5f7ff',
+                            100: '#ebf0fe',
+                            200: '#ced9fd',
+                            300: '#a7bafd',
+                            400: '#7590fa',
+                            500: '#4f46e5',
+                            600: '#4338ca',
+                            700: '#3730a3',
+                            800: '#312e81',
+                            900: '#1e1b4b',
+                        },
+                        darkslate: {
+                            800: '#151d30',
+                            850: '#111827',
+                            900: '#0b0f19',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        heading: ['Outfit', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Chart.js 4 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-slate-50 dark:bg-[#0b0f19] text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-indigo-500 selection:text-white">
+
+    {% if session.get('user_id') %}
+    <!-- ================= AUTHENTICATED APP SHELL ================= -->
+    <div class="flex h-screen overflow-hidden">
+        
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div id="sidebar-backdrop" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="app-sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-white dark:bg-[#151d30] border-r border-slate-200 dark:border-slate-800 flex flex-col transition-transform duration-300 ease-in-out -translate-x-full lg:translate-x-0 lg:static lg:inset-auto">
+            
+            <!-- App Brand / Logo -->
+            <div class="h-16 flex items-center justify-between px-6 border-b border-slate-100 dark:border-slate-800/80">
+                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 group">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-wallet text-lg"></i>
+                    </div>
+                    <div>
+                        <span class="font-heading font-bold text-lg text-slate-900 dark:text-white tracking-tight leading-none block">ExpenseTrack</span>
+                        <span class="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Fintech Intelligence</span>
+                    </div>
+                </a>
+                <button id="sidebar-close-btn" class="lg:hidden text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <div class="flex-1 overflow-y-auto px-4 py-6 space-y-1.5">
+                <a href="{{ url_for('dashboard') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors {% if request.endpoint == 'dashboard' %}bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                    <i class="fa-solid fa-grid-2 text-base w-5 text-center"></i>
+                    <span>Dashboard</span>
+                </a>
+                
+                <a href="{{ url_for('expenses') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors {% if request.endpoint in ['expenses', 'add_expense', 'edit_expense'] %}bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                    <i class="fa-solid fa-receipt text-base w-5 text-center"></i>
+                    <span>Expenses</span>
+                </a>
+
+                <a href="{{ url_for('analytics') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors {% if request.endpoint == 'analytics' %}bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                    <i class="fa-solid fa-chart-pie text-base w-5 text-center"></i>
+                    <span>Analytics</span>
+                </a>
+
+                <a href="{{ url_for('budgets') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors {% if request.endpoint == 'budgets' %}bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                    <i class="fa-solid fa-piggy-bank text-base w-5 text-center"></i>
+                    <span>Monthly Budgets</span>
+                </a>
+
+                <a href="{{ url_for('reports') }}" class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-sm transition-colors {% if request.endpoint == 'reports' %}bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 shadow-sm{% else %}text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-white{% endif %}">
+                    <i class="fa-solid fa-file-invoice-dollar text-base w-5 text-center"></i>
+                    <span>Reports & Export</span>
+                </a>
+
+                <div class="pt-4 pb-2">
+                    <div class="px-3 text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-slate-500">Quick Actions</div>
+                </div>
+
+                <a href="{{ url_for('add_expense') }}" class="w-full btn-primary !py-2.5 text-sm !rounded-xl shadow-md">
+                    <i class="fa-solid fa-plus text-xs"></i>
+                    <span>Add Expense</span>
+                </a>
+            </div>
+
+            <!-- User Profile & Footer in Sidebar -->
+            <div class="p-4 border-t border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-900/30">
+                <div class="flex items-center justify-between">
+                    <a href="{{ url_for('profile') }}" class="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition-opacity">
+                        <div class="w-9 h-9 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 font-bold flex items-center justify-center text-sm border border-indigo-200 dark:border-indigo-800/60 shrink-0">
+                            {{ session.get('user_name', 'U')[:1] | upper }}
+                        </div>
+                        <div class="truncate">
+                            <div class="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{{ session.get('user_name') }}</div>
+                            <div class="text-xs text-slate-400 truncate">{{ session.get('user_email') }}</div>
+                        </div>
+                    </a>
+                    <button data-modal-target="logoutModal" class="p-2 text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors" title="Log Out">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+            
+            <!-- Top App Header -->
+            <header class="h-16 bg-white dark:bg-[#151d30] border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between px-4 sm:px-6 z-30 shrink-0">
+                <div class="flex items-center gap-3">
+                    <button id="mobile-menu-btn" class="lg:hidden p-2 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                    <div>
+                        {% block breadcrumb %}
+                        <div class="flex items-center gap-2 text-xs text-slate-400">
+                            <span>Fintech</span>
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                            <span class="text-slate-700 dark:text-slate-300 font-medium">Dashboard</span>
+                        </div>
+                        {% endblock %}
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <!-- Today Date Display (Indian Format) -->
+                    <div class="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800/60 text-xs font-medium text-slate-600 dark:text-slate-300">
+                        <i class="fa-regular fa-calendar text-indigo-500"></i>
+                        <span>{{ today_date.strftime('%d %b %Y') }}</span>
+                    </div>
+
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle-btn" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-sm" title="Toggle Theme">
+                        <i id="theme-toggle-icon" class="fa-solid fa-moon text-sm"></i>
+                    </button>
+
+                    <!-- Settings Shortcut -->
+                    <a href="{{ url_for('profile') }}" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-sm" title="Account Settings">
+                        <i class="fa-solid fa-gear text-sm"></i>
+                    </a>
+                </div>
+            </header>
+
+            <!-- Scrollable Page Body -->
+            <main class="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-slate-50 dark:bg-[#0b0f19]">
+                <!-- Flash Alerts Container -->
+                <div class="max-w-7xl mx-auto space-y-3 mb-6">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="flash-banner flex items-center justify-between p-4 rounded-xl text-sm font-medium border shadow-sm {% if category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/50 dark:text-emerald-300{% elif category == 'danger' %}bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800/50 dark:text-rose-300{% elif category == 'warning' %}bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800/50 dark:text-amber-300{% else %}bg-indigo-50 border-indigo-200 text-indigo-800 dark:bg-indigo-950/40 dark:border-indigo-800/50 dark:text-indigo-300{% endif %}">
+                                    <div class="flex items-center gap-3">
+                                        <i class="fa-solid {% if category == 'success' %}fa-circle-check text-emerald-500{% elif category == 'danger' %}fa-triangle-exclamation text-rose-500{% elif category == 'warning' %}fa-circle-exclamation text-amber-500{% else %}fa-circle-info text-indigo-500{% endif %}"></i>
+                                        <span>{{ message }}</span>
+                                    </div>
+                                    <button data-dismiss="alert" class="p-1 hover:opacity-75 transition-opacity">
+                                        <i class="fa-solid fa-xmark"></i>
+                                    </button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+
+                <div class="max-w-7xl mx-auto">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-container bg-white dark:bg-[#151d30] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-950/50 text-red-600 dark:text-red-400 flex items-center justify-center text-xl mx-auto mb-4">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            </div>
+            <h3 class="text-center font-heading font-bold text-lg text-slate-900 dark:text-white mb-2">Sign Out</h3>
+            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">Are you sure you want to end your current session? You will be returned to the landing page.</p>
+            <div class="flex items-center gap-3">
+                <button data-modal-close class="btn-secondary flex-1 !py-2.5 text-sm">Cancel</button>
+                <form action="{{ url_for('logout') }}" method="POST" class="flex-1">
+                    <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors shadow-md shadow-red-500/20">
+                        Log Out
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Expense Details Modal -->
+    <div id="expenseDetailModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-container bg-white dark:bg-[#151d30] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-sm">
+                        <i class="fa-solid fa-receipt"></i>
+                    </div>
+                    <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">Transaction Details</h3>
+                </div>
+                <button data-modal-close class="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="py-5 space-y-4">
+                <div>
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Expense Title</span>
+                    <h4 id="detail-title" class="text-lg font-bold text-slate-800 dark:text-slate-100 mt-0.5">Loading...</h4>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium">Amount</span>
+                        <div id="detail-amount" class="text-xl font-heading font-extrabold text-indigo-600 dark:text-indigo-400 mt-1">--</div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium">Category</span>
+                        <div id="detail-category" class="text-sm font-semibold text-slate-700 dark:text-slate-200 mt-1.5">--</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium block">Expense Date</span>
+                        <span id="detail-date" class="font-medium text-slate-700 dark:text-slate-200">--</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-medium block">Recorded At</span>
+                        <span id="detail-created" class="text-xs text-slate-500 dark:text-slate-400">--</span>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="text-xs text-slate-400 font-medium block mb-1">Notes / Description</span>
+                    <p id="detail-notes" class="text-sm text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/30 p-3 rounded-lg border border-slate-100 dark:border-slate-800/60 leading-relaxed"></p>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <button data-modal-close class="btn-secondary !py-2 text-xs">Close</button>
+                <a id="detail-edit-link" href="#" class="btn-primary !py-2 text-xs">
+                    <i class="fa-solid fa-pen-to-square text-[11px]"></i>
+                    <span>Edit Expense</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Expense Confirmation Modal -->
+    <div id="deleteExpenseModal" class="modal-overlay fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="modal-container bg-white dark:bg-[#151d30] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-sm w-full p-6 shadow-2xl">
+            <div class="w-12 h-12 rounded-xl bg-rose-100 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl mx-auto mb-4">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="text-center font-heading font-bold text-lg text-slate-900 dark:text-white mb-2">Delete Expense?</h3>
+            <p class="text-center text-sm text-slate-500 dark:text-slate-400 mb-2">Are you sure you want to permanently remove:</p>
+            <div class="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 text-center mb-6">
+                <div id="delete-modal-title" class="font-semibold text-slate-800 dark:text-slate-200 text-sm">--</div>
+                <div id="delete-modal-amount" class="text-xs text-indigo-600 dark:text-indigo-400 font-bold mt-0.5"></div>
+            </div>
+            <div class="flex items-center gap-3">
+                <button data-modal-close class="btn-secondary flex-1 !py-2.5 text-sm">Cancel</button>
+                <form id="delete-expense-form" action="" method="POST" class="flex-1">
+                    <button type="submit" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-medium py-2.5 px-4 rounded-xl text-sm transition-colors shadow-md shadow-rose-500/20">
+                        Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- ================= PUBLIC / AUTH FLOW SHELL ================= -->
+    <div class="min-h-screen flex flex-col">
+        <!-- Public Navbar -->
+        <header class="w-full border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-[#151d30]/80 backdrop-blur-md sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+                <a href="{{ url_for('index') }}" class="flex items-center gap-3 group">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-indigo-400 flex items-center justify-center text-white shadow-md shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+                        <i class="fa-solid fa-wallet text-sm"></i>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-heading font-bold text-base sm:text-lg text-slate-900 dark:text-white leading-tight">ExpenseTrack</span>
+                        <span class="text-[9px] uppercase tracking-wider font-semibold text-indigo-600 dark:text-indigo-400">Personal Finance</span>
+                    </div>
+                </a>
+
+                <div class="flex items-center gap-3">
+                    <button id="theme-toggle-btn" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors shadow-sm" title="Toggle Theme">
+                        <i id="theme-toggle-icon" class="fa-solid fa-moon text-sm"></i>
+                    </button>
+                    {% if request.endpoint != 'login' %}
+                    <a href="{{ url_for('login') }}" class="btn-secondary !py-2 text-xs sm:text-sm !px-3.5">Log In</a>
+                    {% endif %}
+                    {% if request.endpoint != 'signup' %}
+                    <a href="{{ url_for('signup') }}" class="btn-primary !py-2 text-xs sm:text-sm !px-4">Create Account</a>
+                    {% endif %}
+                </div>
+            </div>
+        </header>
+
+        <!-- Flash Messages for Public Shell -->
+        <div class="max-w-xl mx-auto w-full px-4 pt-6">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="flash-banner flex items-center justify-between p-4 rounded-xl text-sm font-medium border shadow-sm {% if category == 'success' %}bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800/50 dark:text-emerald-300{% elif category == 'danger' %}bg-rose-50 border-rose-200 text-rose-800 dark:bg-rose-950/40 dark:border-rose-800/50 dark:text-rose-300{% elif category == 'warning' %}bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800/50 dark:text-amber-300{% else %}bg-indigo-50 border-indigo-200 text-indigo-800 dark:bg-indigo-950/40 dark:border-indigo-800/50 dark:text-indigo-300{% endif %}">
+                            <div class="flex items-center gap-3">
+                                <i class="fa-solid {% if category == 'success' %}fa-circle-check text-emerald-500{% elif category == 'danger' %}fa-triangle-exclamation text-rose-500{% elif category == 'warning' %}fa-circle-exclamation text-amber-500{% else %}fa-circle-info text-indigo-500{% endif %}"></i>
+                                <span>{{ message }}</span>
+                            </div>
+                            <button data-dismiss="alert" class="p-1 hover:opacity-75 transition-opacity">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <main class="flex-1 flex flex-col justify-center">
+            {% block auth_content %}{% endblock %}
+        </main>
+    </div>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

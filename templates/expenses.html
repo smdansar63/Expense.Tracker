@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block title %}Expenses - Personal Expense Tracker{% endblock %}
+
+{% block breadcrumb %}
+<div class="flex items-center gap-2 text-xs text-slate-400">
+    <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400">Dashboard</a>
+    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    <span class="text-slate-800 dark:text-slate-200 font-semibold">Expenses</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Top Action Bar -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#151d30] border border-slate-200 dark:border-slate-800 p-6 rounded-2xl shadow-sm">
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('dashboard') }}" class="w-9 h-9 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors" title="Back to Dashboard">
+                <i class="fa-solid fa-arrow-left text-sm"></i>
+            </a>
+            <div>
+                <h1 class="text-2xl font-extrabold font-heading text-slate-900 dark:text-white">Expense Management</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Filter, search, organize, and inspect all financial records</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <a href="{{ url_for('dashboard') }}" class="btn-secondary !py-2.5 text-xs font-semibold">
+                <i class="fa-solid fa-house text-slate-400 text-xs"></i>
+                <span>Back to Dashboard</span>
+            </a>
+            <a href="{{ url_for('add_expense') }}" class="btn-primary !py-2.5 text-xs sm:text-sm !rounded-xl shadow-md">
+                <i class="fa-solid fa-plus text-xs"></i>
+                <span>Add Expense</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Search & Filter Controls Card -->
+    <div class="fintech-card p-5 rounded-2xl">
+        <form action="{{ url_for('expenses') }}" method="GET" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                
+                <!-- Search Keyword -->
+                <div class="lg:col-span-2">
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Search Record</label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </span>
+                        <input type="text" name="search" value="{{ search or '' }}" placeholder="Search title or notes..." class="input-fintech !pl-8 text-xs sm:text-sm">
+                    </div>
+                </div>
+
+                <!-- Category Filter -->
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Category</label>
+                    <select name="category" class="input-fintech text-xs sm:text-sm">
+                        <option value="">All Categories</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if selected_category == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Start Date -->
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">From Date</label>
+                    <input type="date" name="start_date" value="{{ start_date or '' }}" class="input-fintech text-xs sm:text-sm">
+                </div>
+
+                <!-- End Date -->
+                <div>
+                    <label class="block text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-1">To Date</label>
+                    <input type="date" name="end_date" value="{{ end_date or '' }}" class="input-fintech text-xs sm:text-sm">
+                </div>
+
+            </div>
+
+            <!-- Sort & Action Row -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs text-slate-400 font-medium">Sort by:</span>
+                    <select name="sort_by" class="input-fintech !w-auto !py-1.5 !px-3 text-xs bg-slate-50 dark:bg-slate-800" onchange="this.form.submit()">
+                        <option value="date_desc" {% if sort_by == 'date_desc' %}selected{% endif %}>Date (Newest First)</option>
+                        <option value="date_asc" {% if sort_by == 'date_asc' %}selected{% endif %}>Date (Oldest First)</option>
+                        <option value="amount_desc" {% if sort_by == 'amount_desc' %}selected{% endif %}>Amount (Highest First)</option>
+                        <option value="amount_asc" {% if sort_by == 'amount_asc' %}selected{% endif %}>Amount (Lowest First)</option>
+                        <option value="title_asc" {% if sort_by == 'title_asc' %}selected{% endif %}>Title (A-Z)</option>
+                        <option value="category_asc" {% if sort_by == 'category_asc' %}selected{% endif %}>Category (A-Z)</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <button type="submit" class="btn-primary !py-1.5 !px-4 text-xs">
+                        <i class="fa-solid fa-filter text-xs"></i>
+                        <span>Apply Filters</span>
+                    </button>
+                    {% if search or selected_category or start_date or end_date or sort_by != 'date_desc' %}
+                    <a href="{{ url_for('expenses') }}" class="btn-secondary !py-1.5 !px-3 text-xs" title="Reset Filters">
+                        <i class="fa-solid fa-rotate-left text-xs"></i>
+                        <span>Reset</span>
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Active Filter Summary Stats -->
+    <div class="flex flex-wrap items-center justify-between gap-3 px-1 text-xs text-slate-500 dark:text-slate-400">
+        <div>
+            Showing <span class="font-bold text-slate-900 dark:text-white">{{ total_records }}</span> matching transactions
+        </div>
+        <div class="font-medium">
+            Filtered Expenditure: <span class="font-bold text-indigo-600 dark:text-indigo-400 text-sm font-heading">{{ formatted_filtered_total }}</span>
+        </div>
+    </div>
+
+    <!-- Expense Table & Cards -->
+    <div class="fintech-card rounded-2xl overflow-hidden shadow-sm">
+        {% if expenses %}
+        <!-- Desktop Table View -->
+        <div class="hidden md:block overflow-x-auto">
+            <table class="w-full text-left text-sm">
+                <thead class="bg-slate-50/75 dark:bg-slate-800/40 text-slate-400 text-xs uppercase tracking-wider font-semibold border-b border-slate-100 dark:border-slate-800">
+                    <tr>
+                        <th class="py-3.5 px-5">Expense Title & Description</th>
+                        <th class="py-3.5 px-5">Category</th>
+                        <th class="py-3.5 px-5">Date</th>
+                        <th class="py-3.5 px-5 text-right">Amount (INR)</th>
+                        <th class="py-3.5 px-5 text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for exp in expenses %}
+                    <tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                        <td class="py-4 px-5">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-sm" style="background-color: {{ exp.category_color }}1a; color: {{ exp.category_color }}">
+                                    <i class="fa-solid {{ exp.category_icon }}"></i>
+                                </div>
+                                <div class="truncate max-w-[320px]">
+                                    <span class="block font-semibold text-slate-800 dark:text-slate-100">{{ exp.title }}</span>
+                                    {% if exp.notes %}
+                                    <span class="text-xs text-slate-400 truncate block mt-0.5">{{ exp.notes }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td class="py-4 px-5">
+                            <span class="badge-category" style="background-color: {{ exp.category_color }}15; color: {{ exp.category_color }}">
+                                <i class="fa-solid {{ exp.category_icon }} text-[10px]"></i>
+                                <span>{{ exp.category_name }}</span>
+                            </span>
+                        </td>
+                        <td class="py-4 px-5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                            {{ exp.formatted_date }}
+                        </td>
+                        <td class="py-4 px-5 text-right font-heading font-bold text-slate-900 dark:text-slate-100 whitespace-nowrap text-base">
+                            {{ exp.formatted_amount }}
+                        </td>
+                        <td class="py-4 px-5 text-center whitespace-nowrap">
+                            <div class="flex items-center justify-center gap-1.5 opacity-90 group-hover:opacity-100">
+                                <button data-modal-target="expenseDetailModal" data-view-id="{{ exp.id }}" class="p-2 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Inspect Details">
+                                    <i class="fa-regular fa-eye text-sm"></i>
+                                </button>
+                                <a href="{{ url_for('edit_expense', expense_id=exp.id) }}" class="p-2 rounded-lg text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Edit">
+                                    <i class="fa-regular fa-pen-to-square text-sm"></i>
+                                </a>
+                                <button data-modal-target="deleteExpenseModal" data-expense-id="{{ exp.id }}" data-expense-title="{{ exp.title }}" data-expense-amount="{{ exp.formatted_amount }}" class="p-2 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-slate-800" title="Delete">
+                                    <i class="fa-regular fa-trash-can text-sm"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Mobile Card View -->
+        <div class="md:hidden divide-y divide-slate-100 dark:divide-slate-800">
+            {% for exp in expenses %}
+            <div class="p-4 space-y-3">
+                <div class="flex items-start justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-sm shrink-0" style="background-color: {{ exp.category_color }}1a; color: {{ exp.category_color }}">
+                            <i class="fa-solid {{ exp.category_icon }}"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-slate-900 dark:text-white text-sm">{{ exp.title }}</h4>
+                            <span class="text-xs text-slate-400">{{ exp.formatted_date }}</span>
+                        </div>
+                    </div>
+                    <div class="text-right font-heading font-bold text-slate-900 dark:text-white text-base">
+                        {{ exp.formatted_amount }}
+                    </div>
+                </div>
+
+                {% if exp.notes %}
+                <p class="text-xs text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-slate-800/40 p-2.5 rounded-lg">{{ exp.notes }}</p>
+                {% endif %}
+
+                <div class="flex items-center justify-between pt-1">
+                    <span class="badge-category text-[11px]" style="background-color: {{ exp.category_color }}15; color: {{ exp.category_color }}">
+                        {{ exp.category_name }}
+                    </span>
+                    <div class="flex items-center gap-2">
+                        <button data-modal-target="expenseDetailModal" data-view-id="{{ exp.id }}" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600">
+                            <i class="fa-regular fa-eye text-sm"></i>
+                        </button>
+                        <a href="{{ url_for('edit_expense', expense_id=exp.id) }}" class="p-1.5 rounded-lg text-slate-400 hover:text-amber-600">
+                            <i class="fa-regular fa-pen-to-square text-sm"></i>
+                        </a>
+                        <button data-modal-target="deleteExpenseModal" data-expense-id="{{ exp.id }}" data-expense-title="{{ exp.title }}" data-expense-amount="{{ exp.formatted_amount }}" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-600">
+                            <i class="fa-regular fa-trash-can text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Pagination Controls -->
+        {% if total_pages > 1 %}
+        <div class="p-4 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/20">
+            <div class="text-xs text-slate-500 dark:text-slate-400">
+                Page <span class="font-bold text-slate-800 dark:text-slate-200">{{ page }}</span> of <span class="font-bold text-slate-800 dark:text-slate-200">{{ total_pages }}</span>
+            </div>
+
+            <div class="flex items-center gap-1.5">
+                {% if page > 1 %}
+                <a href="{{ url_for('expenses', page=page-1, search=search, category=selected_category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="btn-secondary !py-1.5 !px-3 text-xs">
+                    <i class="fa-solid fa-chevron-left text-[10px]"></i>
+                    <span>Prev</span>
+                </a>
+                {% endif %}
+
+                {% for p in range(1, total_pages + 1) %}
+                    {% if p == page %}
+                    <span class="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shadow-sm">{{ p }}</span>
+                    {% elif p <= 3 or p >= total_pages - 1 or (p >= page - 1 and p <= page + 1) %}
+                    <a href="{{ url_for('expenses', page=p, search=search, category=selected_category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="w-8 h-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 text-xs flex items-center justify-center font-medium">
+                        {{ p }}
+                    </a>
+                    {% elif p == 4 and page > 4 %}
+                    <span class="px-1 text-slate-400 text-xs">...</span>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page < total_pages %}
+                <a href="{{ url_for('expenses', page=page+1, search=search, category=selected_category, start_date=start_date, end_date=end_date, sort_by=sort_by) }}" class="btn-secondary !py-1.5 !px-3 text-xs">
+                    <span>Next</span>
+                    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <!-- Empty State -->
+        <div class="p-12 text-center text-slate-400">
+            <div class="w-14 h-14 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl mx-auto mb-3">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <h3 class="font-heading font-bold text-base text-slate-900 dark:text-white">No Matching Expenses</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">Try refining your search keyword or clearing the filters to view your transaction history.</p>
+            <div class="mt-4 flex items-center justify-center gap-3">
+                <a href="{{ url_for('expenses') }}" class="btn-secondary !py-2 text-xs">Clear Filters</a>
+                <a href="{{ url_for('add_expense') }}" class="btn-primary !py-2 text-xs">Add New Expense</a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

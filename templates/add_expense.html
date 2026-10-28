@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Add Expense - Personal Expense Tracker{% endblock %}
+
+{% block breadcrumb %}
+<div class="flex items-center gap-2 text-xs text-slate-400">
+    <a href="{{ url_for('dashboard') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400">Dashboard</a>
+    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    <a href="{{ url_for('expenses') }}" class="hover:text-indigo-600 dark:hover:text-indigo-400">Expenses</a>
+    <i class="fa-solid fa-chevron-right text-[10px]"></i>
+    <span class="text-slate-800 dark:text-slate-200 font-semibold">Add Expense</span>
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <!-- Header & Navigation -->
+    <div class="flex items-center justify-between">
+        <a href="{{ url_for('expenses') }}" data-action="go-back" data-fallback="{{ url_for('expenses') }}" class="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Back to Expenses</span>
+        </a>
+        <a href="{{ url_for('dashboard') }}" class="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+            Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="fintech-card p-6 sm:p-8 rounded-2xl shadow-lg relative">
+        <div class="flex items-center gap-3 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div class="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-receipt"></i>
+            </div>
+            <div>
+                <h1 class="text-xl sm:text-2xl font-bold font-heading text-slate-900 dark:text-white">Record New Expense</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Enter transaction details to track your spending</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('add_expense') }}" method="POST" class="mt-6 space-y-5">
+            <!-- Title -->
+            <div>
+                <label for="title" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Expense Title <span class="text-rose-500">*</span></label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-solid fa-pen-nib text-sm"></i>
+                    </span>
+                    <input type="text" id="title" name="title" value="{{ form.title if form else '' }}" required placeholder="e.g. Weekly Grocery Shopping" class="input-fintech !pl-9 text-sm">
+                </div>
+            </div>
+
+            <!-- Amount & Category Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- Amount -->
+                <div>
+                    <label for="amount" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Amount (INR ₹) <span class="text-rose-500">*</span></label>
+                    <div class="relative">
+                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none font-bold text-slate-500 text-sm">
+                            ₹
+                        </span>
+                        <input type="number" step="0.01" min="0.01" id="amount" name="amount" value="{{ form.amount if form else '' }}" required placeholder="0.00" class="input-fintech !pl-8 text-sm font-semibold">
+                    </div>
+                </div>
+
+                <!-- Category -->
+                <div>
+                    <label for="category_id" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Category <span class="text-rose-500">*</span></label>
+                    <select id="category_id" name="category_id" required class="input-fintech text-sm">
+                        <option value="">Select Category</option>
+                        {% for cat in categories %}
+                        <option value="{{ cat.id }}" {% if form and form.category_id == cat.id|string %}selected{% endif %}>
+                            {{ cat.name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Expense Date -->
+            <div>
+                <label for="expense_date" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Expense Date <span class="text-rose-500">*</span></label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <i class="fa-regular fa-calendar text-sm"></i>
+                    </span>
+                    <input type="date" id="expense_date" name="expense_date" value="{{ form.expense_date if form else today_str }}" required class="input-fintech !pl-9 text-sm">
+                </div>
+            </div>
+
+            <!-- Notes -->
+            <div>
+                <label for="notes" class="block text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Notes / Memo (Optional)</label>
+                <textarea id="notes" name="notes" rows="3" placeholder="Add specific notes, payment method, or itemized details..." class="input-fintech text-sm">{{ form.notes if form else '' }}</textarea>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <a href="{{ url_for('expenses') }}" class="btn-secondary !py-2.5 !px-5 text-sm">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary !py-2.5 !px-6 text-sm !rounded-xl shadow-md shadow-indigo-500/20">
+                    <i class="fa-solid fa-check text-xs"></i>
+                    <span>Save Expense</span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
