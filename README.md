@@ -200,3 +200,5 @@ When presenting this project to evaluators or professors:
 - **Password Protection**: Passwords are saved strictly as salted cryptographic hashes (`pbkdf2:sha256`).
 - **Ownership Checks**: Every database operation queries `WHERE user_id = %s`, preventing IDOR (Insecure Direct Object Reference).
 - **Session Security**: Session cookies have `HttpOnly` enabled to mitigate XSS attacks and `SameSite='Lax'` to protect against CSRF.
+#   E x p e n s e _ T r a c k e r  
+ 
